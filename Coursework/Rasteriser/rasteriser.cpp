@@ -216,7 +216,6 @@ int main()
             continue;
         }
 
-
         Vertex a = vertices[face.v1];
         Vertex b = vertices[face.v2];
         Vertex c = vertices[face.v3];
@@ -226,6 +225,26 @@ int main()
         projectVertex(a, ax, ay);
         projectVertex(b, bx, by);
         projectVertex(c, cx, cy);
+
+        // --- calculate two edges of the triangle ---
+        float abx = b.x - a.x;
+        float aby = b.y - a.y;
+        float abz = b.z - a.z;
+
+        float acx = c.x - a.x;
+        float acy = c.y - a.y;
+        float acz = c.z - a.z;
+
+        // --- calculate the face normal using a cross ---
+        float nx = aby * acz - abz * acy;
+        float ny = abz * acx - abx * acz;
+        float nz = abx * acy - aby * acx;
+
+        // --- skip all the faces pointing away from the camera --
+        if (nz >= 0)
+        {
+            continue;
+        }
 
         drawLine(imageBuffer, width, height, nChannels, ax, ay, bx, by);
         drawLine(imageBuffer, width, height, nChannels, bx, by, cx, cy);
