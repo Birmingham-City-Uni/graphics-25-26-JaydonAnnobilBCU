@@ -19,6 +19,38 @@ void drawPixel(std::vector<uint8_t>& imageBuffer, int width, int height, int nCh
     imageBuffer[pixelIdx * nChannels + 3] = 255;
 }
 
+// --- re usable object --
+void fillTriangle(std::vector<uint8_t>& imageBuffer,
+    int width, int height, int nChannels,
+    int x1, int y1, int x2, int y2, int x3, int y3)
+{
+    int minX = std::max(0, std::min({ x1, x2, x3 }));
+    int maxX = std::min(width - 1, std::max({ x1, x2, x3 }));
+
+    int minY = std::max(0, std::min({ y1, y2, y3 }));
+    int maxY = std::min(height - 1, std::max({ y1, y2, y3 }));
+
+    float area = (x2 - x1) * (y3 - y1) - (y2 - y1) * (x3 - x1);
+
+    for (int y = minY; y <= maxY; y++)
+    {
+        for (int x = minX; x <= maxX; x++)
+        {
+            float w0 = (x2 - x1) * (y - y1) - (y2 - y1) * (x - x1);
+            float w1 = (x3 - x2) * (y - y2) - (y3 - y2) * (x - x2);
+            float w2 = (x1 - x3) * (y - y3) - (y1 - y3) * (x - x3);
+
+            if ((w0 >= 0 && w1 >= 0 && w2 >= 0) ||
+                (w0 <= 0 && w1 <= 0 && w2 <= 0))
+            {
+                drawPixel(imageBuffer, width, height, nChannels,
+                    x, y, 255, 255, 255);
+            }
+        }
+    }
+}
+
+// --- main loop --
 int main()
 {
 	std::string outputFilename = "output.png";
@@ -40,49 +72,17 @@ int main()
         }
     }
 
-    // Triangle corners
-    int x1 = 500, y1 = 250;
-    int x2 = 900, y2 = 750;
-    int x3 = 1300, y3 = 250;
+    // --- drawing two triangles --
+    fillTriangle(imageBuffer, width, height, nChannels,
+        500, 250,
+        900, 750,
+        500, 750);
 
-    // Function to draw a line using interpolation
-    auto drawLine = [&](int startX, int startY, int endX, int endY)
-        {
-            for (int i = 0; i <= 1000; i++)
-            {
-                float t = i / 1000.0f;
+    fillTriangle(imageBuffer, width, height, nChannels,
+        900, 250,
+        900, 750,
+        500, 250);
 
-                int x = startX + t * (endX - startX);
-                int y = startY + t * (endY - startY);
-
-                int pixelIdx = x + y * width;
-
-                drawPixel(imageBuffer, width, height, nChannels, x, y, 255, 255, 255);
-            }
-        };
-
-    // Draw the three edges
-    drawLine(x1, y1, x2, y2);
-    drawLine(x2, y2, x3, y3);
-    drawLine(x3, y3, x1, y1);
-
-    // Fill the triangle using horizontal scanlines
-    for (int y = y1; y <= y2; y++)
-    {
-        float t = float(y - y1) / float(y2 - y1);
-
-        int leftX = x1 + t * (x2 - x1);
-        int rightX = x3 + t * (x2 - x3);
-
-        if (leftX > rightX)
-            std::swap(leftX, rightX);
-
-        for (int x = leftX; x <= rightX; x++)
-        {
-            drawPixel(imageBuffer, width, height, nChannels,
-                x, y, 255, 255, 255);
-        }
-    }
 
     // Save the image
     int errorCode;
