@@ -8,25 +8,40 @@
 
 
 // --- draws pixel into an RGBA image buffer --
-void drawPixel(std::vector<uint8_t>& imageBuffer, int width, int height, int nChannels,
-    int x, int y, uint8_t r, uint8_t g, uint8_t b)
+void drawPixel(std::vector<uint8_t>& imageBuffer,
+    std::vector<float>& depthBuffer,
+    int width, int height, int nChannels,
+    int x, int y, float depth,
+    uint8_t r, uint8_t g, uint8_t b)
 {
-    // --- stops crashes if it tries to draw outside image --
     if (x < 0 || x >= width || y < 0 || y >= height)
         return;
 
     int pixelIdx = x + y * width;
 
+    // Don't draw if another pixel is closer
+    if (depth >= depthBuffer[pixelIdx])
+        return;
+
+    depthBuffer[pixelIdx] = depth;
+
     imageBuffer[pixelIdx * nChannels + 0] = r;
     imageBuffer[pixelIdx * nChannels + 1] = g;
     imageBuffer[pixelIdx * nChannels + 2] = b;
     imageBuffer[pixelIdx * nChannels + 3] = 255;
+
 }
 
-// --- draw lines  --
+// --- DRAW LINE ---
+// --- DRAW LINE ---
+/// --- DRAW LINE ---
+// --- DRAW LINE ---
+/// --- DRAW LINE ---
+
 // -- two lines that connect from two points --
-// --- interpolation -- 
+// ---- interpolation ---
 void drawLine(std::vector<uint8_t>& imageBuffer,
+    std::vector<float>& depthBuffer,
     int width, int height, int nChannels,
     int x1, int y1, int x2, int y2)
 {
@@ -37,13 +52,14 @@ void drawLine(std::vector<uint8_t>& imageBuffer,
         int x = x1 + t * (x2 - x1);
         int y = y1 + t * (y2 - y1);
 
-        drawPixel(imageBuffer, width, height, nChannels,
-            x, y, 255, 255, 255);
+        drawPixel(imageBuffer, depthBuffer, width, height, nChannels,
+            x, y, 0.0f, 255, 255, 255);
     }
 }
 
 // --- fills triangles by using barycentric edge tests --
 void fillTriangle(std::vector<uint8_t>& imageBuffer,
+    std::vector<float>& depthBuffer,
     int width, int height, int nChannels,
     int x1, int y1, int x2, int y2, int x3, int y3)
 {
@@ -68,8 +84,8 @@ void fillTriangle(std::vector<uint8_t>& imageBuffer,
             if ((w0 >= 0 && w1 >= 0 && w2 >= 0) ||
                 (w0 <= 0 && w1 <= 0 && w2 <= 0))
             {
-                drawPixel(imageBuffer, width, height, nChannels,
-                    x, y, 255, 255, 255);
+                drawPixel(imageBuffer, depthBuffer, width, height, nChannels,
+                    x, y, 0.0f, 255, 255, 255);
             }
         }
     }
@@ -95,14 +111,19 @@ void projectVertex(const Vertex& v, int& sx, int& sy)
     float cameraZ = 40.0f;
 
     // --- move model away from camera --
-    float z = v.z + cameraZ;
+    float z = cameraZ - v.z;
 
     // --- perspective divide --
     sx = int((v.x / z) * scale + 960);
     sy = int(540 - (v.y / z) * scale);
 }
 
-// --- main loop --
+// --- MAIN LOOP ---
+/// --- MAIN LOOP ---
+// --- MAIN LOOP ---
+/// --- MAIN LOOP ---
+// --- MAIN LOOP ---
+/// --- MAIN LOOP ---
 int main()
 {
 	std::string outputFilename = "output.png";
@@ -182,6 +203,10 @@ int main()
 	// --- allocates memory for the output image --
 	std::vector<uint8_t> imageBuffer(height*width*nChannels);
 
+    // --- stores the closest depth value for every pixel --
+    // -- 1e9f, REEAL big number --
+    std::vector<float> depthBuffer(width * height, 1e9f);
+
     // --- Fill the background in black ---
     for (int y = 0; y < height; y++)
     {
@@ -189,7 +214,8 @@ int main()
         {
             int pixelIdx = x + y * width;
 
-            drawPixel(imageBuffer, width, height, nChannels, x, y, 0, 0, 0);
+            drawPixel(imageBuffer, depthBuffer, width, height, nChannels,
+                x, y, 100000000.0f, 0, 0, 0);
         }
     }
 
@@ -241,14 +267,14 @@ int main()
         float nz = abx * acy - aby * acx;
 
         // --- skip all the faces pointing away from the camera --
-        if (nz >= 0)
+        if (nz <= 0)
         {
             continue;
         }
 
-        drawLine(imageBuffer, width, height, nChannels, ax, ay, bx, by);
-        drawLine(imageBuffer, width, height, nChannels, bx, by, cx, cy);
-        drawLine(imageBuffer, width, height, nChannels, cx, cy, ax, ay);
+        drawLine(imageBuffer, depthBuffer, width, height, nChannels, ax, ay, bx, by);
+        drawLine(imageBuffer, depthBuffer, width, height, nChannels, bx, by, cx, cy);
+        drawLine(imageBuffer, depthBuffer, width, height, nChannels, cx, cy, ax, ay);
     }
 
 
