@@ -57,8 +57,16 @@ void drawLine(std::vector<uint8_t>& imageBuffer,
     }
 }
 
+/// --- FILL TRIANGLE ---
+// --- FILL TRIANGLE ---
+/// --- FILL TRIANGLE ---
+// --- FILL TRIANGLE ---
+/// --- FILL TRIANGLE ---
+// --- FILL TRIANGLE ---
+
 // --- fills triangles by using barycentric edge tests --
-void fillTriangle(std::vector<uint8_t>& imageBuffer,
+void fillTriangle(
+    std::vector<uint8_t>& imageBuffer,
     std::vector<float>& depthBuffer,
     int width, int height, int nChannels,
     int x1, int y1, float z1,
@@ -92,19 +100,14 @@ void fillTriangle(std::vector<uint8_t>& imageBuffer,
                 float beta = w2 / total;
                 float gamma = w0 / total;
 
-                float depth = alpha * z1 + beta * z2 + gamma * z3;
+                float depth = alpha * z1 +
+                    beta * z2 +
+                    gamma * z3;
 
-                if (alpha >= 0 && beta >= 0 && gamma >= 0)
-                {
-                    drawPixel(imageBuffer, depthBuffer,
-                        width, height, nChannels,
-                        x, y, depth,
-                        255, 255, 255);
-                }
-
-                // --- draw the pixel if it's closer than what's already there ---
-                drawPixel(imageBuffer, depthBuffer, width, height, nChannels,
-                    x, y, depth, 255, 255, 255);
+                drawPixel(imageBuffer, depthBuffer,
+                    width, height, nChannels,
+                    x, y, depth,
+                    255, 255, 255);
             }
         }
     }
@@ -123,18 +126,23 @@ struct Face
     int v1, v2, v3;
 };
 
-// --- convert 3D to 2D and keep depth --
+// --- PROJECT VERTEX ---
+/// --- PROJECT VERTEX ---
+// --- PROJECT VERTEX ---
+/// --- PROJECT VERTEX ---
+// --- PROJECT VERTEX ---
+/// --- PROJECT VERTEX ---
+
+// --- convert 3D to 2D and keep depth ---
 void projectVertex(const Vertex& v, int& sx, int& sy, float& depth)
 {
     float scale = 400.0f;
     float cameraZ = 40.0f;
 
-    float z = cameraZ - v.z;
+    depth = v.z + cameraZ;
 
-    sx = int((v.x / z) * scale + 960);
-    sy = int(540 - (v.y / z) * scale);
-
-    depth = z;
+    sx = int((v.x / depth) * scale + 960);
+    sy = int(540 - (v.y / depth) * scale);
 }
 
 // --- MAIN LOOP ---
@@ -287,7 +295,7 @@ int main()
         float nz = abx * acy - aby * acx;
 
         // --- skip all the faces pointing away from the camera --
-        if (nz <= 0)
+        if (nz >= 0)
         {
             continue;
         }
@@ -296,6 +304,11 @@ int main()
         // drawLine(imageBuffer, depthBuffer, width, height, nChannels, bx, by, cx, cy);
         // drawLine(imageBuffer, depthBuffer, width, height, nChannels, cx, cy, ax, ay);
 
+        // --- FILL TRIANGLES ---
+        /// --- FILL TRIANGLES ---
+        // --- FILL TRIANGLES ---
+        /// --- FILL TRIANGLES ---
+        // --- FILL TRIANGLES ---
         fillTriangle(imageBuffer, depthBuffer,
             width, height, nChannels,
             ax, ay, az,
