@@ -86,8 +86,23 @@ void fillTriangle(std::vector<uint8_t>& imageBuffer,
             if ((w0 >= 0 && w1 >= 0 && w2 >= 0) ||
                 (w0 <= 0 && w1 <= 0 && w2 <= 0))
             {
-                float depth = (z1 + z2 + z3) / 3.0f;
+                float total = w0 + w1 + w2;
 
+                float alpha = w1 / total;
+                float beta = w2 / total;
+                float gamma = w0 / total;
+
+                float depth = alpha * z1 + beta * z2 + gamma * z3;
+
+                if (alpha >= 0 && beta >= 0 && gamma >= 0)
+                {
+                    drawPixel(imageBuffer, depthBuffer,
+                        width, height, nChannels,
+                        x, y, depth,
+                        255, 255, 255);
+                }
+
+                // --- draw the pixel if it's closer than what's already there ---
                 drawPixel(imageBuffer, depthBuffer, width, height, nChannels,
                     x, y, depth, 255, 255, 255);
             }
