@@ -61,7 +61,9 @@ void drawLine(std::vector<uint8_t>& imageBuffer,
 void fillTriangle(std::vector<uint8_t>& imageBuffer,
     std::vector<float>& depthBuffer,
     int width, int height, int nChannels,
-    int x1, int y1, int x2, int y2, int x3, int y3)
+    int x1, int y1, float z1,
+    int x2, int y2, float z2,
+    int x3, int y3, float z3)
 {
     // --- calculates smallest bounding box around triangles --
     int minX = std::max(0, std::min({ x1, x2, x3 }));
@@ -84,8 +86,10 @@ void fillTriangle(std::vector<uint8_t>& imageBuffer,
             if ((w0 >= 0 && w1 >= 0 && w2 >= 0) ||
                 (w0 <= 0 && w1 <= 0 && w2 <= 0))
             {
+                float depth = (z1 + z2 + z3) / 3.0f;
+
                 drawPixel(imageBuffer, depthBuffer, width, height, nChannels,
-                    x, y, 0.0f, 255, 255, 255);
+                    x, y, depth, 255, 255, 255);
             }
         }
     }
@@ -104,18 +108,18 @@ struct Face
     int v1, v2, v3;
 };
 
-// --- convert 3D to 2D --
-void projectVertex(const Vertex& v, int& sx, int& sy)
+// --- convert 3D to 2D and keep depth --
+void projectVertex(const Vertex& v, int& sx, int& sy, float& depth)
 {
     float scale = 400.0f;
     float cameraZ = 40.0f;
 
-    // --- move model away from camera --
     float z = cameraZ - v.z;
 
-    // --- perspective divide --
     sx = int((v.x / z) * scale + 960);
     sy = int(540 - (v.y / z) * scale);
+
+    depth = z;
 }
 
 // --- MAIN LOOP ---
@@ -247,10 +251,11 @@ int main()
         Vertex c = vertices[face.v3];
 
         int ax, ay, bx, by, cx, cy;
+        float az, bz, cz;
 
-        projectVertex(a, ax, ay);
-        projectVertex(b, bx, by);
-        projectVertex(c, cx, cy);
+        projectVertex(a, ax, ay, az);
+        projectVertex(b, bx, by, bz);
+        projectVertex(c, cx, cy, cz);
 
         // --- calculate two edges of the triangle ---
         float abx = b.x - a.x;
@@ -272,9 +277,15 @@ int main()
             continue;
         }
 
-        drawLine(imageBuffer, depthBuffer, width, height, nChannels, ax, ay, bx, by);
-        drawLine(imageBuffer, depthBuffer, width, height, nChannels, bx, by, cx, cy);
-        drawLine(imageBuffer, depthBuffer, width, height, nChannels, cx, cy, ax, ay);
+        // drawLine(imageBuffer, depthBuffer, width, height, nChannels, ax, ay, bx, by);
+        // drawLine(imageBuffer, depthBuffer, width, height, nChannels, bx, by, cx, cy);
+        // drawLine(imageBuffer, depthBuffer, width, height, nChannels, cx, cy, ax, ay);
+
+        fillTriangle(imageBuffer, depthBuffer,
+            width, height, nChannels,
+            ax, ay, az,
+            bx, by, bz,
+            cx, cy, cz);
     }
 
 
